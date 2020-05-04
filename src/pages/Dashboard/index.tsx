@@ -35,17 +35,21 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
-      const { data } = await api.get<Product[]>('/products');
+      const { data } = await api.get('/products');
 
-      setProducts(data);
-      console.log(products);
+      const formattedPrice = data.map((product: Product) => ({
+        ...product,
+        formatPrice: formatValue(product.price),
+      }));
+
+      setProducts(formattedPrice);
     }
 
     loadProducts();
   }, []);
 
   function handleAddToCart(item: Product): void {
-    // TODO
+    addToCart({ ...item, quantity: 1 });
   }
 
   return (
@@ -63,7 +67,7 @@ const Dashboard: React.FC = () => {
               <ProductImage source={{ uri: item.image_url }} />
               <ProductTitle>{item.title}</ProductTitle>
               <PriceContainer>
-                <ProductPrice>{formatValue(item.price)}</ProductPrice>
+                <ProductPrice>{item.formatPrice}</ProductPrice>
                 <ProductButton
                   testID={`add-to-cart-${item.id}`}
                   onPress={() => handleAddToCart(item)}
