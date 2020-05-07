@@ -18,70 +18,58 @@ interface Product {
 
 interface CartContext {
   products: Product[];
-  addToCart(item: Product): void;
+  addToCart(item: Omit<Product, 'quantity'>): void;
   increment(id: string): void;
   decrement(id: string): void;
 }
 
-const CartContext = createContext<CartContext | null>(null);
+const CartContext = createContext<CartContext>({} as CartContext);
 
 const CartProvider: React.FC = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    async function loadProducts(): Promise<void> {
-      const response = await AsyncStorage.getItem('@GoMarketplace:cart');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // let isCancelled = false;
 
-      if (response) {
-        setProducts(JSON.parse(response));
+    async function loadProducts(): Promise<void> {
+      try {
+        const response = await AsyncStorage.getItem('@GoMarketplace:cart');
+        if (response) {
+          setProducts(JSON.parse(response));
+        }
+        console.log('useEffect');
+      } catch (err) {
+        console.log(err);
       }
     }
 
     loadProducts();
-  }, [products, setProducts]);
+    // return () => {
+    //   isCancelled = true;
+    // };
+  }, [products]);
 
-  const addToCart = useCallback(
-    async (product: Product) => {
-      // TODO ADD A NEW ITEM TO THE CART
-
-      const existsProduct = products.findIndex(
-        (item: Product) => product.id === item.id,
-      );
-      console.log(existsProduct);
-
-      if (existsProduct === -1) {
-        console.log('New product');
-
-        const newList = [...products, product];
-        // setProducts(newList);
-
-        await AsyncStorage.setItem(
-          '@GoMarketplace:cart',
-          JSON.stringify(newList),
-        );
-        console.log(products);
-      } else {
-        console.log('Add quantity product');
-      }
-    },
-    [products],
-  );
+  const updateProductsStore = useCallback(async productsUpdate => {
+    await AsyncStorage.setItem(
+      '@GoMarketplace:cart',
+      JSON.stringify(productsUpdate),
+    );
+    setProducts(productsUpdate);
+  }, []);
 
   const increment = useCallback(
     async id => {
       // TODO INCREMENTS A PRODUCT QUANTITY IN THE CART
       const findProduct = products.findIndex((item: Product) => id === item.id);
       const updateProducts = products;
-      updateProducts[findProduct].quantity = products[findProduct].quantity + 1;
 
-      // setProducts(updateProducts);
+      updateProducts[findProduct].quantity += 1;
+      console.log('Increment');
 
-      await AsyncStorage.setItem(
-        '@GoMarketplace:cart',
-        JSON.stringify(updateProducts),
-      );
+      updateProductsStore(updateProducts);
     },
-    [products],
+    [products, updateProductsStore],
   );
 
   const decrement = useCallback(
@@ -89,28 +77,51 @@ const CartProvider: React.FC = ({ children }) => {
       // TODO DECREMENTS A PRODUCT QUANTITY IN THE CART
       const findProduct = products.findIndex((item: Product) => id === item.id);
       const updateProducts = products;
+
       const quantitValidation = updateProducts[findProduct].quantity;
 
       if (quantitValidation === 1) {
         updateProducts.splice(findProduct, 1);
-        // setProducts(updateProducts);
-
-        await AsyncStorage.setItem(
-          '@GoMarketplace:cart',
-          JSON.stringify(updateProducts),
-        );
       } else {
-        updateProducts[findProduct].quantity =
-          products[findProduct].quantity - 1;
-        // setProducts(updateProducts);
-
-        await AsyncStorage.setItem(
-          '@GoMarketplace:cart',
-          JSON.stringify(updateProducts),
-        );
+        updateProducts[findProduct].quantity -= 1;
       }
+      console.log('Decrement');
+
+      updateProductsStore(updateProducts);
     },
-    [products],
+    [products, updateProductsStore],
+  );
+
+  const addToCart = useCallback(
+    async (product: Product) => {
+      // TODO ADD A NEW ITEM TO THE CART
+      const updateProducts = products;
+      const existsProduct = products.findIndex(
+        (item: Product) => product.id === item.id,
+      );
+
+      if (existsProduct === -1) {
+        const addProduct = {
+          id: product.id,
+          title: product.title,
+          image_url: product.image_url,
+          price: product.price,
+          quantity: product.quantity + 1,
+        };
+
+        updateProducts.push(addProduct);
+      } else {
+        const findProduct = products.findIndex(
+          (item: Product) => product.id === item.id,
+        );
+
+        updateProducts[findProduct].quantity += 1;
+      }
+      console.log('Add To Cart');
+
+      updateProductsStore(updateProducts);
+    },
+    [products, updateProductsStore],
   );
 
   const value = React.useMemo(
