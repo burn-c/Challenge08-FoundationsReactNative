@@ -28,35 +28,30 @@ const CartContext = createContext<CartContext>({} as CartContext);
 const CartProvider: React.FC = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
 
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // let isCancelled = false;
-
-    async function loadProducts(): Promise<void> {
-      try {
-        const response = await AsyncStorage.getItem('@GoMarketplace:cart');
-        if (response) {
-          setProducts(JSON.parse(response));
-        }
-        console.log('useEffect');
-      } catch (err) {
-        console.log(err);
-      }
+  const loadProducts = useCallback(async () => {
+    const response = await AsyncStorage.getItem('@GoMarketplace:cart');
+    if (response) {
+      setProducts(JSON.parse(response));
     }
-
-    loadProducts();
-    // return () => {
-    //   isCancelled = true;
-    // };
-  }, [products]);
-
-  const updateProductsStore = useCallback(async productsUpdate => {
-    await AsyncStorage.setItem(
-      '@GoMarketplace:cart',
-      JSON.stringify(productsUpdate),
-    );
-    setProducts(productsUpdate);
+    console.log('useEffect');
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
+  const updateProductsStore = useCallback(
+    async productsUpdate => {
+      setProducts([...productsUpdate]);
+
+      await AsyncStorage.setItem(
+        '@GoMarketplace:cart',
+        JSON.stringify([...productsUpdate]),
+      );
+      loadProducts();
+    },
+    [loadProducts],
+  );
 
   const increment = useCallback(
     async id => {

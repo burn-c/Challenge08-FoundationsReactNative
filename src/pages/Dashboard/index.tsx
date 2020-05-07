@@ -34,16 +34,16 @@ const Dashboard: React.FC = () => {
 
   const [products, setProducts] = useState<Product[]>([]);
 
-  const handleAddToCart = useCallback(
-    async (item: Product) => {
-      addToCart(item);
-    },
-    [addToCart],
-  );
+  // const handleAddToCart = useCallback(
+  //   async (item: Product) => {
+  //     addToCart(item);
+  //   },
+  //   [addToCart],
+  // );
 
-  // function handleAddToCart(item: Product): void {
-  //   addToCart(item);
-  // }
+  function handleAddToCart(item: Product): void {
+    addToCart(item);
+  }
 
   useEffect(() => {
     async function loadProducts(): Promise<void> {
