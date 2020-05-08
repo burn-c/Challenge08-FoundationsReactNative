@@ -31,14 +31,10 @@ const CartProvider: React.FC = ({ children }) => {
   const loadProducts = useCallback(async () => {
     const response = await AsyncStorage.getItem('@GoMarketplace:cart');
     if (response) {
-      setProducts(JSON.parse(response));
+      await setProducts(JSON.parse(response));
     }
-    console.log('useEffect');
+    console.log('loadProducts');
   }, []);
-
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
 
   const updateProductsStore = useCallback(
     async productsUpdate => {
@@ -52,6 +48,11 @@ const CartProvider: React.FC = ({ children }) => {
     },
     [loadProducts],
   );
+
+  useEffect(() => {
+    console.log('useEffect');
+    loadProducts();
+  }, [loadProducts]);
 
   const increment = useCallback(
     async id => {
@@ -75,7 +76,7 @@ const CartProvider: React.FC = ({ children }) => {
 
       const quantitValidation = updateProducts[findProduct].quantity;
 
-      if (quantitValidation === 1) {
+      if (quantitValidation <= 1) {
         updateProducts.splice(findProduct, 1);
       } else {
         updateProducts[findProduct].quantity -= 1;
@@ -101,10 +102,10 @@ const CartProvider: React.FC = ({ children }) => {
           title: product.title,
           image_url: product.image_url,
           price: product.price,
-          quantity: product.quantity + 1,
+          quantity: 1,
         };
 
-        updateProducts.push(addProduct);
+        await updateProducts.push(addProduct);
       } else {
         const findProduct = products.findIndex(
           (item: Product) => product.id === item.id,
